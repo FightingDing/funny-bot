@@ -6,6 +6,7 @@ from io import BytesIO
 from aiotg import BotApiError
 from spider import aioget, fetch_lists, fetch_img
 
+host, port = ('localhost', 6379)
 
 logging.basicConfig(
     level=logging.INFO,
@@ -80,7 +81,7 @@ def format_text(results, ptype):
     text = ""
     for index, item in enumerate(results):
         text += "%02d" % (index + 1) + '.' + item['title'] + \
-            ' /' + ptype + item['date'] + '_' + item['key'] + '\n'
+                ' /' + ptype + item['date'] + '_' + item['key'] + '\n'
     return text
 
 
@@ -129,32 +130,32 @@ async def download_photo(chat, imgs):
 
 
 async def get_fileid(key, page):
-    conn = await aioredis.create_connection(('redis', 6379))
+    conn = await aioredis.create_connection((host, port))
     return await conn.execute('hget', key, page)
 
 
 async def store_fileid(fileid, key, page, nexe):
-    conn = await aioredis.create_connection(('redis', 6379))
+    conn = await aioredis.create_connection((host, port))
     img_page = dict(imgs=fileid, nexe=nexe)
     await conn.execute('hset', key, page, str(img_page))
     logging.info(f'{key}-{page} stored')
 
 
 async def log_users(message):
-    conn = await aioredis.create_connection(('redis', 6379))
+    conn = await aioredis.create_connection((host, port))
     await conn.execute('sadd', 'users', str(message['result']['chat']))
     number = await conn.execute('scard', 'users')
     logging.info(f'add a new user! there are {number} users')
 
 
 async def produce_imgs(chat, date, key, page):
-    dbs = await get_fileid(date+key, page)
+    dbs = await get_fileid(date + key, page)
     if page == '1':
         url = root_url + date + '/' + key + '.shtml'
     else:
         url = root_url + date + '/' + key + '_' + page + '.shtml'
     if dbs:
-        logging.info(f'fetch {date+key}-{page} fileid from redis')
+        logging.info(f'fetch {date + key}-{page} fileid from redis')
         dbs = eval(dbs)
         tasks = (chat.send_photo(photo=img['file_ids'][0]['file_id'], caption=img['desc']) for img in dbs['imgs'])
         await asyncio.gather(*tasks)
@@ -163,7 +164,7 @@ async def produce_imgs(chat, date, key, page):
         logging.info(f'fetch imgs from {url}')
         results, nexe = await fetch_img(url)
         file_id = await download_photo(chat, results)
-        await store_fileid(file_id, date+key, page, nexe)
+        await store_fileid(file_id, date + key, page, nexe)
     if nexe:
         text = '下一页(第' + str(int(page) + 1) + '页)'
         page = str(int(page) + 1)

@@ -1,14 +1,39 @@
 import json
+
 from aiotg import Bot, Chat, CallbackQuery
-from util import format_message, match_category, \
-    download_gifs, produce_imgs, log_users
 from spider import fetch_lists, fetch_img
+from util import format_message, match_category, download_gifs, produce_imgs, log_users
 
-with open('token.json') as t, open('category.json') as c:
-    token = json.loads(t.read())
-    category = json.loads(c.read())
+# with open('token.json') as t, open('category.json') as c:
+# token = json.loads(t.read())
+token = '934856189:AAGry-EqwdOxGh7Tax5hbNqy-**'
+# category = json.loads(c.read())
+category = {
+    "name": [
+        "动态图(dynamic)",
+        "囧图(oops)",
+        "福利图(beauty)",
+        "轻松一刻(easy_moment)",
+        "冷知识(trivia)",
+        "冷吐槽(cold_tucao)"
+    ],
+    "desc": [
+        "搞笑动态图片",
+        "尴尬囧图",
+        "美女福利图",
+        "开开心心 轻松一刻",
+        "爆笑冷知识",
+        "日式冷吐槽"
+    ],
+    "dynamic": "http://www.gamersky.com/ent/111/",
+    "oops": "http://www.gamersky.com/ent/147/",
+    "beauty": "http://tag.gamersky.com/news/1626.html",
+    "easy_moment": "http://www.gamersky.com/ent/20503/",
+    "cold_tucao": "http://www.gamersky.com/ent/20108/",
+    "trivia": "http://www.gamersky.com/ent/198/"
+}
 
-bot = Bot(**token)
+bot = Bot(api_token=token)
 root_url = "http://www.gamersky.com/ent/"
 help_tetx = "点击按钮查看下一页, 或者点击原网址查看详细内容"
 
@@ -76,7 +101,7 @@ async def inline_name(iq, match):
         'id': str(index),
         'title': item['title'],
         'input_message_content': {
-                'message_text': '/' + ptype + item['date'] + '_' + item['key']
+            'message_text': '/' + ptype + item['date'] + '_' + item['key']
         },
         'description': item['desc']
     } for index, item in enumerate(results)]
@@ -97,11 +122,11 @@ async def get_gif(chat: Chat, match):
         }], [{
             'type': 'InlineKeyboardButton',
             'text': "欢迎在github上提出建议",
-            'url': "https://github.com/yangsoon/funny-bot/issues",
+            'url': "https://github.com/FightingDing/funny-bot/issues",
             'callback_data': ' '
         }]]
     }
-    text = "抱歉,动态图在优化中,如果你有好的想法,欢迎在github上提出issue"
+    text = "动态图在优化中,如果你有好的想法,欢迎在github上提出issue"
     await chat.send_text(text=text, reply_markup=json.dumps(markup))
     results, _ = await fetch_img(url)
     await download_gifs(chat, results)
